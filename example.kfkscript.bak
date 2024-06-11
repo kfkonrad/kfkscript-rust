@@ -1,0 +1,40 @@
+keyword $stack::create 1
+  return scope::outer::let + + ' VECTOR@" tel $args@1 $@SIZE 0
+end
+
+keyword $stack::size 1
+  return scope::outer::tel + + ' VECTOR@" tel $args@1 $@SIZE
+end
+
+keyword $stack::append 2
+  let $vectorname + ' VECTOR@" tel $args@1
+  let $vectorsize + tel $vectorname $@SIZE
+  let $value tel $args@2
+  let $ret scope::outer::let + tel $vectorname + $@ str::cast scope::outer::tel tel $vectorsize tel $value
+  scope::outer::let tel $vectorsize + scope::outer::tel tel $vectorsize 1
+  return tel $ret
+end
+
+keyword $stack::top 1
+  let $vectorname + ' VECTOR@" tel $args@1
+  let $vectorsize + tel $vectorname $@SIZE
+  let $top_elem_cnt - scope::outer::tel tel $vectorsize 1
+  return scope::outer::tel + tel $vectorname + $@ str::cast tel $top_elem_cnt
+end
+
+keyword $stack::pop 1
+  let $vectorname + ' VECTOR@" tel $args@1
+  let $vectorsize + tel $vectorname $@SIZE
+  let $top_elem_cnt - scope::outer::tel tel $vectorsize 1
+  let $ret stack::top tel $args@1
+  scope::outer::let tel $vectorsize tel $top_elem_cnt
+  return tel $ret
+end
+
+stack::create $foo
+stack::append $foo 42
+stack::append $foo 4711
+println + 'stack::top " str::cast stack::top $foo
+println + 'stack::pop " str::cast stack::pop $foo
+println + 'stack::top " str::cast stack::top $foo
+println + 'stack::pop " str::cast stack::pop $foo

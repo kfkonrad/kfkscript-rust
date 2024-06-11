@@ -13,13 +13,13 @@ pub struct Keyword{
   pub line_number: u32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KfkString{
   pub lexem: String,
   pub line_number: u32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Number{
   pub lexem: String,
   pub number: f64,
