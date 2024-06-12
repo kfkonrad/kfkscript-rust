@@ -7,12 +7,13 @@ pub struct Invocation {
   pub arguments: Vec<InvocationArgument>,
 }
 
+#[derive(Clone)]
 pub enum InvocationArgument {
   // Invocation(Invocation), // TODO
   Number(token::Number),
   KfkString(token::KfkString),
 }
-
+#[derive(Clone)]
 pub struct KeywordImplementation {
   pub name: String,
   pub implementation: fn(GlobalState, Vec<InvocationArgument>) -> GlobalState,
@@ -26,9 +27,10 @@ pub enum NestingState {
   SubroutineDefinition,
 }
 
+#[derive(Clone)]
 pub struct GlobalState {
   pub variables: HashMap<String, String>,
-  pub keywords: HashMap<String, KeywordImplementation>
+  pub keywords: HashMap<String, KeywordImplementation>,
   // pub subroutines: (),
   // pub pure_keywords: (),
   // // line_number = 1 // moved to token
@@ -36,7 +38,7 @@ pub struct GlobalState {
   // pub subroutine_name: String,
   // pub subroutine_content: Vec<InvocationArgument>,
   // pub is_keyword_definiton: bool,
-  // pub ret: Option<InvocationArgument>,
+  pub ret: Option<InvocationArgument>,
   // pub scopes: Vec<GlobalState>,
   // pub variadic_number: u32,
 }

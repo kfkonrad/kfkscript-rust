@@ -1,7 +1,40 @@
 use std::error::Error;
+use std::slice::ChunksMut;
 
 use crate::token;
 use crate::token::{Token, TokenType};
+
+
+fn determine_next_token_type(current_char: char, next_char:Option<&char>) -> (TokenType, String) {
+     match current_char {
+         '-' => {
+             if let Some(next_char) = next_char {
+                 if next_char.is_ascii_digit() {
+                     (TokenType::Number, current_char.into())
+                 } else {
+                     (TokenType::Keyword, current_char.into())
+                 }
+             } else {
+              (TokenType::Keyword, '-'.into())
+             }
+         }
+         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+             (TokenType::Number, current_char.into())
+         },
+         '$' => {
+             (TokenType::KfkDollarString, String::new())
+         }
+         '\'' => {
+             (TokenType::KfkApostropheString, String::new())
+         }
+         x if x.is_whitespace() => {
+             (TokenType::None, current_char.into())
+         }
+         _ => {
+             (TokenType::Keyword, current_char.into())
+         }
+     }
+ }
 
 pub fn parse(source_code: String) -> Result<Vec<Token>, Box<dyn Error>> {
   let mut tokens: Vec<Token> = vec![];
@@ -9,47 +42,32 @@ pub fn parse(source_code: String) -> Result<Vec<Token>, Box<dyn Error>> {
   let mut prelim = String::new();
   let mut token_type = TokenType::Keyword;
   let mut source_code_iter = source_code.chars().peekable();
+  let mut is_comment = false;
 
   while let Some(current_char) = source_code_iter.next() {
       let next_char = source_code_iter.peek();
       let newline = current_char == '\n';
 
       if token_type == TokenType::None {
-          token_type = match current_char {
-              '-' => {
-                  prelim = format!("{}{}", prelim, current_char);
-                  if let Some(next_char) = next_char {
-                      if next_char.is_ascii_digit() {
-                          TokenType::Number
-                      } else {
-                          TokenType::Keyword
-                      }
-                  } else {
-                      TokenType::Keyword
-                  }
-              }
-              '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-                  prelim = format!("{}{}", prelim, current_char);
-                  TokenType::Number
-              },
-              '$' => {
-                  TokenType::KfkDollarString
-              }
-              '\'' => {
-                  TokenType::KfkApostropheString
-              }
-              x if x.is_whitespace() => {
-                  TokenType::None
-              }
-              _ => {
-                  prelim = format!("{}{}", prelim, current_char);
-                  TokenType::Keyword
-              }
-          };
+         if !is_comment {
+           is_comment = current_char == '#';
+         }
+         if is_comment {
           if newline {
-              line_number += 1;
+            is_comment = false;
+            line_number += 1;
+            continue;
+          } else {
+            continue;
           }
-          continue;
+        }
+
+        (token_type, prelim) = determine_next_token_type(current_char, next_char);
+
+        if newline {
+          line_number += 1;
+        }
+        continue;
       }
 
       match token_type {
@@ -72,8 +90,9 @@ pub fn parse(source_code: String) -> Result<Vec<Token>, Box<dyn Error>> {
               }
           },
           TokenType::Keyword => {
-              if current_char.is_whitespace() {
-                  tokens.push(Token::Keyword(token::Keyword{lexem: prelim, line_number: line_number}));
+            if current_char.is_whitespace()  || current_char == '#' {
+              is_comment = current_char == '#';
+              tokens.push(Token::Keyword(token::Keyword{lexem: prelim, line_number: line_number}));
                   prelim = String::new();
                   token_type = TokenType::None;
               } else {
@@ -81,7 +100,8 @@ pub fn parse(source_code: String) -> Result<Vec<Token>, Box<dyn Error>> {
               }
           },
           TokenType::Number => {
-              if current_char.is_whitespace() {
+              if current_char.is_whitespace()  || current_char == '#' {
+                  is_comment = current_char == '#';
                   let number = prelim.parse()?;
                   tokens.push(Token::Number(token::Number{lexem: prelim, number, line_number}));
                   prelim = String::new();
