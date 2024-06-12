@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::iter::Peekable;
 use std::slice::Iter;
 use std::{collections::HashMap, fs};
@@ -12,7 +11,10 @@ use invocation::{GlobalState, InvocationArgument, KeywordImplementation};
 use parser::{parse, print_tokens};
 use token::Token;
 
-fn main() -> Result<(), Box<dyn Error>> {
+use color_eyre::eyre::Result;
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
     let code: String = fs::read_to_string("example.kfkscript")?;
     let tokens = parse(code)?;
     let mut global_state: GlobalState = GlobalState {

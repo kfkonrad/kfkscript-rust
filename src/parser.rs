@@ -1,7 +1,8 @@
-use std::error::Error;
-
 use crate::token;
 use crate::token::{Token, TokenType};
+
+use color_eyre::eyre::{Result};
+use color_eyre::eyre::eyre;
 
 
 fn determine_next_token_type(current_char: char, next_char:Option<&char>) -> (TokenType, String) {
@@ -35,7 +36,7 @@ fn determine_next_token_type(current_char: char, next_char:Option<&char>) -> (To
      }
  }
 
-pub fn parse(source_code: String) -> Result<Vec<Token>, Box<dyn Error>> {
+pub fn parse(source_code: String) -> Result<Vec<Token>> {
   let mut tokens: Vec<Token> = vec![];
   let mut line_number = 1;
   let mut prelim = String::new();
@@ -101,14 +102,18 @@ pub fn parse(source_code: String) -> Result<Vec<Token>, Box<dyn Error>> {
           TokenType::Number => {
               if current_char.is_whitespace()  || current_char == '#' {
                   is_comment = current_char == '#';
-                  let number = prelim.parse()?;
+                  let number = prelim.parse().or_else(|_|
+                    Err(
+                      eyre!(
+                        format!("invalid number in line {line_number}: {prelim}")
+                      )
+                    )
+                  )?;
                   tokens.push(Token::Number(token::Number{lexem: prelim, number, line_number}));
                   prelim = String::new();
                   token_type = TokenType::None;
               } else {
                   prelim = format!("{}{}", prelim, current_char);
-                  // TODO: check whether prelim constitutes a valid (partial) number in kfkscript
-                  // alternative: check for valid number at the end
               }
           }
           TokenType::None => {},
