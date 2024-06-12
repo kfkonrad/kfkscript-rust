@@ -1,8 +1,7 @@
 use crate::token;
 use crate::token::{Token, TokenType};
 
-use color_eyre::eyre::{Result};
-use color_eyre::eyre::eyre;
+use color_eyre::eyre::{eyre, Result};
 
 
 fn determine_next_token_type(current_char: char, next_char:Option<&char>) -> (TokenType, String) {
