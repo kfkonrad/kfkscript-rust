@@ -2,11 +2,6 @@ use std::collections::HashMap;
 
 use crate::token;
 
-pub struct Invocation {
-  pub keyword: KeywordImplementation,
-  pub arguments: Vec<InvocationArgument>,
-}
-
 #[derive(Clone)]
 pub enum InvocationArgument {
   // Invocation(Invocation), // TODO
@@ -20,12 +15,12 @@ pub struct KeywordImplementation {
   pub number_of_arguments: u32,
 }
 
-pub enum NestingState {
-  If,
-  Else,
-  Ignore,
-  SubroutineDefinition,
-}
+// pub enum NestingState {
+//   If,
+//   Else,
+//   Ignore,
+//   SubroutineDefinition,
+// }
 
 #[derive(Clone)]
 pub struct GlobalState {

@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::slice::ChunksMut;
 
 use crate::token;
 use crate::token::{Token, TokenType};

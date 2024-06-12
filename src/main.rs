@@ -37,11 +37,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             number_of_arguments: 2,
         },
     );
+    if let Ok(debug) = std::env::var("KFKSCRIPT_DEBUG") {
+        if debug == "1" {
+          print_tokens(tokens.clone());
+        }
+    }
     let mut token_iter = tokens.iter().peekable();
     while let Some(_) = token_iter.peek() {
         global_state = next_invocation(&mut token_iter, global_state);
     }
-    // print_tokens(tokens);
     Ok(())
 }
 

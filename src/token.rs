@@ -7,7 +7,7 @@ pub enum TokenType {
     None
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Keyword{
   pub lexem: String,
   pub line_number: u32
@@ -26,7 +26,7 @@ pub struct Number{
   pub line_number: u32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Keyword(Keyword),
     KfkString(KfkString),
