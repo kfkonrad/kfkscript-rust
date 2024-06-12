@@ -4,26 +4,26 @@ pub enum TokenType {
     KfkApostropheString,
     KfkDollarString,
     Number,
-    None
+    None,
 }
 
 #[derive(Debug, Clone)]
-pub struct Keyword{
-  pub lexem: String,
-  pub line_number: u32
+pub struct Keyword {
+    pub lexem: String,
+    pub line_number: u32,
 }
 
 #[derive(Debug, Clone)]
-pub struct KfkString{
-  pub lexem: String,
-  pub line_number: u32
+pub struct KfkString {
+    pub lexem: String,
+    pub line_number: u32,
 }
 
 #[derive(Debug, Clone)]
-pub struct Number{
-  pub lexem: String,
-  pub number: f64,
-  pub line_number: u32
+pub struct Number {
+    pub lexem: String,
+    pub number: f64,
+    pub line_number: u32,
 }
 
 #[derive(Debug, Clone)]

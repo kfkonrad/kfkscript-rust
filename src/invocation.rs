@@ -4,15 +4,15 @@ use crate::token;
 
 #[derive(Clone)]
 pub enum InvocationArgument {
-  // Invocation(Invocation), // TODO
-  Number(token::Number),
-  KfkString(token::KfkString),
+    // Invocation(Invocation), // TODO
+    Number(token::Number),
+    KfkString(token::KfkString),
 }
 #[derive(Clone)]
 pub struct KeywordImplementation {
-  pub name: String,
-  pub implementation: fn(GlobalState, Vec<InvocationArgument>) -> GlobalState,
-  pub number_of_arguments: u32,
+    pub name: String,
+    pub implementation: fn(GlobalState, Vec<InvocationArgument>) -> GlobalState,
+    pub number_of_arguments: u32,
 }
 
 // pub enum NestingState {
@@ -24,16 +24,16 @@ pub struct KeywordImplementation {
 
 #[derive(Clone)]
 pub struct GlobalState {
-  pub variables: HashMap<String, String>,
-  pub keywords: HashMap<String, KeywordImplementation>,
-  // pub subroutines: (),
-  // pub pure_keywords: (),
-  // // line_number = 1 // moved to token
-  // pub nesting: Vec<NestingState>,
-  // pub subroutine_name: String,
-  // pub subroutine_content: Vec<InvocationArgument>,
-  // pub is_keyword_definiton: bool,
-  pub ret: Option<InvocationArgument>,
-  // pub scopes: Vec<GlobalState>,
-  // pub variadic_number: u32,
+    pub variables: HashMap<String, String>,
+    pub keywords: HashMap<String, KeywordImplementation>,
+    // pub subroutines: (),
+    // pub pure_keywords: (),
+    // // line_number = 1 // moved to token
+    // pub nesting: Vec<NestingState>,
+    // pub subroutine_name: String,
+    // pub subroutine_content: Vec<InvocationArgument>,
+    // pub is_keyword_definiton: bool,
+    pub ret: Option<InvocationArgument>,
+    // pub scopes: Vec<GlobalState>,
+    // pub variadic_number: u32,
 }
