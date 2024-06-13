@@ -15,12 +15,13 @@ pub struct KeywordImplementation {
     pub number_of_arguments: u32,
 }
 
-// pub enum NestingState {
-//   If,
-//   Else,
-//   Ignore,
-//   SubroutineDefinition,
-// }
+#[derive(Clone, PartialEq)]
+pub enum NestingState {
+    If,
+    Else,
+    Ignore,
+    SubroutineDefinition,
+}
 
 #[derive(Clone)]
 pub struct GlobalState {
@@ -29,7 +30,7 @@ pub struct GlobalState {
     // pub subroutines: (),
     // pub pure_keywords: (),
     // // line_number = 1 // moved to token
-    // pub nesting: Vec<NestingState>,
+    pub nesting: Vec<NestingState>,
     // pub subroutine_name: String,
     // pub subroutine_content: Vec<InvocationArgument>,
     // pub is_keyword_definiton: bool,

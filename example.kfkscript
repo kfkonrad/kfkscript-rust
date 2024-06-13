@@ -7,6 +7,26 @@ println#
 + + 1 1 1# 3
 println
 + + 1 1 1.0
-# println (+ (+ 1 1) 1)
 + 2 2
-- 12 1
+if '42" # true
+  println $salami
+else
+  println $hund
+end
+if '" # false
+  println $kuchen
+else
+  println $buffet
+end
+
+if 'yes"
+  if 'also yes"
+    println $kuchen!
+  end
+end
+if 'yes"
+  if '"
+  else
+    println $kuchen!
+  end
+end

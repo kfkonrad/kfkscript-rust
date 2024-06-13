@@ -3,6 +3,8 @@ use crate::{
     token,
 };
 
+pub use crate::control_flow::{else_, end, if_};
+
 pub fn println(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalState {
     let mut print_string = "".to_string();
     let mut arg_iter = args.iter().peekable();
