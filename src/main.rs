@@ -8,10 +8,9 @@ mod keywords;
 mod parser;
 mod token;
 
-use control_flow::determine_tokens_to_skip;
 use invocation::{GlobalState, InvocationArgument, KeywordImplementation};
 use parser::{parse, print_tokens};
-use token::Token;
+use token::{Keyword, Token};
 
 use color_eyre::eyre::{eyre, OptionExt, Result};
 
@@ -58,6 +57,8 @@ fn main() -> Result<()> {
     global_state = register_keyword(global_state, "if", keywords::if_, 1)?;
     global_state = register_keyword(global_state, "else", keywords::else_, 0)?;
     global_state = register_keyword(global_state, "end", keywords::end, 0)?;
+    global_state = register_keyword(global_state, "let", keywords::let_, 2)?;
+    global_state = register_keyword(global_state, "tel", keywords::tel, 1)?;
 
     if let Ok(debug) = std::env::var("KFKSCRIPT_DEBUG") {
         if debug == "1" {
@@ -67,7 +68,7 @@ fn main() -> Result<()> {
     let mut token_iter = tokens.iter().peekable();
     while let Some(next_token) = token_iter.peek() {
         let tokens_to_skip: u32;
-        (tokens_to_skip, global_state) = determine_tokens_to_skip(global_state, next_token)?;
+        (tokens_to_skip, global_state) = control_flow::determine_tokens_to_skip(global_state, next_token)?;
         if tokens_to_skip > 0 {
             for _ in 0..=tokens_to_skip {
                 token_iter.next();
@@ -98,7 +99,15 @@ fn next_invocation(
             "keyword {} not implemented in line {}",
             keyword.lexem, keyword.line_number
         ))?;
-    // let mut args = vec![InvocationArgument::KfkString(token::KfkString{ lexem: "string".into(), line_number: 42, }), InvocationArgument::Number(Number{ lexem: "42".into(), number: 42.0, line_number: 42 })];
+    // let args = vec![InvocationArgument::KfkString(token::KfkString{ lexem: "string".into(), line_number: 42, }), InvocationArgument::Number(Number{ lexem: "42".into(), number: 42.0, line_number: 42 })];
+    let args: Vec<InvocationArgument>;
+    (args, new_state) = retrieve_arguments(keyword_impl, keyword, tokens, new_state)?;
+
+    Ok((keyword_impl.implementation)(new_state, args))
+}
+
+fn retrieve_arguments(keyword_impl: &KeywordImplementation, keyword: &&Keyword, tokens: &mut Peekable<Iter<Token>>, global_state: GlobalState) -> Result<(Vec<InvocationArgument>, GlobalState)> {
+    let mut new_state = global_state;
     let mut args = vec![];
     for _ in 0..keyword_impl.number_of_arguments {
         let new_arg = match tokens.peek().ok_or_eyre(format!(
@@ -120,6 +129,5 @@ fn next_invocation(
         };
         args.push(new_arg)
     }
-
-    Ok((keyword_impl.implementation)(new_state, args))
+    Ok((args, new_state))
 }

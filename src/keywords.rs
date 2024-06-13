@@ -1,3 +1,5 @@
+use color_eyre::eyre::OptionExt;
+
 use crate::{
     invocation::{self, GlobalState, InvocationArgument},
     token,
@@ -37,4 +39,25 @@ pub fn add(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalSt
         line_number: 0,
     }));
     new_state
+}
+
+pub fn let_(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalState {
+  let name = args.get(0).ok_or_eyre("Name of variable in let not found. This error should never surface, please inform the developers.").unwrap();
+  let value = args.get(1).ok_or_eyre("Value of variable in let not found. This error should never surface, please inform the developers.").unwrap();
+  println!("LET {name:?}, {value:?}");
+  let mut new_state = global_state;
+  new_state.variables.insert(name.to_owned(), value.to_owned());
+  new_state
+}
+
+
+pub fn tel(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalState {
+  let mut new_state = global_state;
+  let name = args.get(0).ok_or_eyre("Name of variable in let not found. This error should never surface, please inform the developers.").unwrap();
+  let value = new_state.variables.get(name).ok_or_eyre(format!("No such variable {:?}", name)).unwrap();
+  let value_clone = value.clone();
+  println!("TEL {name:?} {value:?}");
+  new_state.variables.insert(name.to_owned(), value.to_owned());
+  new_state.ret = Some(value_clone);
+  new_state
 }

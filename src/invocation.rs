@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::token;
 
-#[derive(Clone)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub enum InvocationArgument {
     // Invocation(Invocation), // TODO
     Number(token::Number),
@@ -25,7 +25,7 @@ pub enum NestingState {
 
 #[derive(Clone)]
 pub struct GlobalState {
-    pub variables: HashMap<String, String>,
+    pub variables: HashMap<InvocationArgument, InvocationArgument>,
     pub keywords: HashMap<String, KeywordImplementation>,
     // pub subroutines: (),
     // pub pure_keywords: (),

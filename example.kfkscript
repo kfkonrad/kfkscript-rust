@@ -30,3 +30,9 @@ if 'yes"
     println $kuchen!
   end
 end
+let $foo 12
+println tel $foo
+let $bar + 12 30
+println tel $bar
+let tel $bar $yippie
+println tel tel $bar
