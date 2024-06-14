@@ -9,12 +9,12 @@ pub fn if_(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalSt
     let arg = args
         .iter()
         .next()
-        .ok_or_eyre("TODO: this can't happen, but it should still be handled")
+        .ok_or_eyre(format!("Expected argument to keyword if in line {}", global_state.line_number))
         .unwrap();
     let mut new_state = global_state;
     if match arg {
-        InvocationArgument::Number(n) => n.number != 0.0,
-        InvocationArgument::KfkString(s) => s.lexem != "",
+        InvocationArgument::Number(n) => n != &0.0,
+        InvocationArgument::KfkString(s) => s != "",
     } {
         new_state.nesting.push(invocation::NestingState::If);
     } else {

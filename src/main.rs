@@ -46,11 +46,9 @@ fn main() -> Result<()> {
     let mut global_state: GlobalState = GlobalState {
         variables: HashMap::new(),
         keywords: HashMap::new(),
-        ret: Some(InvocationArgument::KfkString(token::KfkString {
-            lexem: "käse".into(),
-            line_number: 42,
-        })),
+        ret: Some(InvocationArgument::Number(0.0)),
         nesting: vec![],
+        line_number: 0,
     };
     global_state = register_keyword(global_state, "println", keywords::println, 1)?;
     global_state = register_keyword(global_state, "+", keywords::add, 2)?;
@@ -90,6 +88,7 @@ fn next_invocation(
         Token::KfkString(s) => Err(eyre!(format!("expected keyword, got string '{}\" in line {}", s.lexem, s.line_number)))?,
         Token::Number(n) => Err(eyre!(format!("expected keyword, got number {} in line {}", n.number, n.line_number)))?,
     };
+    new_state.line_number = keyword.line_number;
 
     let keyword_impl = global_state
         .keywords
@@ -120,11 +119,13 @@ fn retrieve_arguments(keyword_impl: &KeywordImplementation, keyword: &&Keyword, 
             }
             Token::KfkString(arg) => {
                 tokens.next();
-                InvocationArgument::KfkString(arg.clone())
+                new_state.line_number = arg.line_number;
+                InvocationArgument::KfkString(arg.lexem.clone())
             }
             Token::Number(arg) => {
                 tokens.next();
-                InvocationArgument::Number(arg.clone())
+                new_state.line_number = arg.line_number;
+                InvocationArgument::Number(arg.number)
             }
         };
         args.push(new_arg)
