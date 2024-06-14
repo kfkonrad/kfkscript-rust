@@ -22,13 +22,12 @@ pub fn println(global_state: GlobalState, args: Vec<InvocationArgument>) -> Glob
 }
 
 pub fn add(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalState {
-    let mut sum = 0.0;
-    for current_arg in args {
-        sum += match current_arg {
+    let sum = args.into_iter().map(|current_arg| {
+        match current_arg {
             invocation::InvocationArgument::Number(number) => number,
             invocation::InvocationArgument::KfkString(_) => panic!("can't add strings"),
-        };
-    }
+        }
+    }).reduce(|a, b| {a+b}).unwrap_or_default();
     let mut new_state = global_state;
     new_state.ret = Some(invocation::InvocationArgument::Number(sum));
     new_state

@@ -107,14 +107,13 @@ fn next_invocation(
 
 fn retrieve_arguments(keyword_impl: &KeywordImplementation, keyword: &&Keyword, tokens: &mut Peekable<Iter<Token>>, global_state: GlobalState) -> Result<(Vec<InvocationArgument>, GlobalState)> {
     let mut new_state = global_state;
-    let mut args = vec![];
-    for _ in 0..keyword_impl.number_of_arguments {
-        let new_arg = match tokens.peek().ok_or_eyre(format!(
+    let args = (0..keyword_impl.number_of_arguments).into_iter().map(|_| {
+        Ok(match tokens.peek().ok_or_eyre(format!(
             "Not enough arguments supplied to keyword {} in line {}",
             keyword_impl.name, keyword.line_number
         ))? {
             Token::Keyword(_) => {
-                new_state = next_invocation(tokens, new_state)?;
+                new_state = next_invocation(tokens, new_state.clone())?;
                 new_state.ret.clone().ok_or_eyre(format!("Return value is None. This error should never surface, please inform the developers"))?
             }
             Token::KfkString(arg) => {
@@ -127,8 +126,7 @@ fn retrieve_arguments(keyword_impl: &KeywordImplementation, keyword: &&Keyword, 
                 new_state.line_number = arg.line_number;
                 InvocationArgument::Number(arg.number)
             }
-        };
-        args.push(new_arg)
-    }
+        })
+    }).collect::<Result<Vec<InvocationArgument>>>()?;
     Ok((args, new_state))
 }
