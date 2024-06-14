@@ -9,7 +9,10 @@ pub fn if_(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalSt
     let arg = args
         .iter()
         .next()
-        .ok_or_eyre(format!("Expected argument to keyword if in line {}", global_state.line_number))
+        .ok_or_eyre(format!(
+            "Expected argument to keyword if in line {}",
+            global_state.line_number
+        ))
         .unwrap();
     let mut new_state = global_state;
     if match arg {

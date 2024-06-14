@@ -4,14 +4,14 @@ use std::collections::HashMap;
 pub enum InvocationArgument {
     // Invocation(Invocation), // TODO
     KfkString(String),
-    Number(f64)
+    Number(f64),
 }
 
 impl std::hash::Hash for InvocationArgument {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
-            InvocationArgument::KfkString(l0) => format!("KfkString:{}",l0).hash(state),
-            InvocationArgument::Number(l0) => format!("Number:{}",l0).hash(state),
+            InvocationArgument::KfkString(l0) => format!("KfkString:{}", l0).hash(state),
+            InvocationArgument::Number(l0) => format!("Number:{}", l0).hash(state),
         }
     }
 }

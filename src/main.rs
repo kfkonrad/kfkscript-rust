@@ -66,7 +66,8 @@ fn main() -> Result<()> {
     let mut token_iter = tokens.iter().peekable();
     while let Some(next_token) = token_iter.peek() {
         let tokens_to_skip: u32;
-        (tokens_to_skip, global_state) = control_flow::determine_tokens_to_skip(global_state, next_token)?;
+        (tokens_to_skip, global_state) =
+            control_flow::determine_tokens_to_skip(global_state, next_token)?;
         if tokens_to_skip > 0 {
             for _ in 0..=tokens_to_skip {
                 token_iter.next();
@@ -105,7 +106,12 @@ fn next_invocation(
     Ok((keyword_impl.implementation)(new_state, args))
 }
 
-fn retrieve_arguments(keyword_impl: &KeywordImplementation, keyword: &&Keyword, tokens: &mut Peekable<Iter<Token>>, global_state: GlobalState) -> Result<(Vec<InvocationArgument>, GlobalState)> {
+fn retrieve_arguments(
+    keyword_impl: &KeywordImplementation,
+    keyword: &&Keyword,
+    tokens: &mut Peekable<Iter<Token>>,
+    global_state: GlobalState,
+) -> Result<(Vec<InvocationArgument>, GlobalState)> {
     let mut new_state = global_state;
     let args = (0..keyword_impl.number_of_arguments).into_iter().map(|_| {
         Ok(match tokens.peek().ok_or_eyre(format!(
