@@ -5,15 +5,14 @@ use crate::{
 
 use color_eyre::eyre::{OptionExt, Result};
 
-pub fn if_(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalState {
+pub fn if_(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<GlobalState> {
     let arg = args
         .iter()
         .next()
         .ok_or_eyre(format!(
             "Expected argument to keyword if in line {}",
             global_state.line_number
-        ))
-        .unwrap();
+        ))?;
     let mut new_state = global_state;
     if match arg {
         InvocationArgument::Number(n) => n != &0.0,
@@ -23,28 +22,29 @@ pub fn if_(global_state: GlobalState, args: Vec<InvocationArgument>) -> GlobalSt
     } else {
         new_state.nesting.push(invocation::NestingState::Else);
     }
-    new_state
+    Ok(new_state)
 }
 
-pub fn else_(global_state: GlobalState, _: Vec<InvocationArgument>) -> GlobalState {
+pub fn else_(global_state: GlobalState, _: Vec<InvocationArgument>) -> Result<GlobalState> {
     let mut new_state = global_state;
-    if new_state.nesting.last().unwrap() == &NestingState::If {
+    let previous_nesting = new_state.nesting.last().ok_or_eyre(format!("Cannot use else when there is no previous if in line {}", new_state.line_number))?;
+    if  previous_nesting== &NestingState::If {
         new_state.nesting.pop();
         new_state.nesting.push(NestingState::Else);
-    } else if new_state.nesting.last().unwrap() == &NestingState::Else {
+    } else if previous_nesting == &NestingState::Else {
         new_state.nesting.pop();
         new_state.nesting.push(NestingState::If);
     }
-    new_state
+    Ok(new_state)
 }
 
-pub fn end(global_state: GlobalState, _: Vec<InvocationArgument>) -> GlobalState {
+pub fn end(global_state: GlobalState, _: Vec<InvocationArgument>) -> Result<GlobalState> {
     let mut new_state = global_state;
-    let previous_state = new_state.nesting.pop().unwrap();
+    let previous_state = new_state.nesting.pop().ok_or_eyre(format!("Cannot use end when there is no previous if, subroutine or keyword registration in line {}", new_state.line_number))?;
     if previous_state == NestingState::SubroutineDefinition {
         todo!();
     }
-    new_state
+    Ok(new_state)
 }
 
 // if we want to ignore the next invocation (NestingState::Else or NestingSatet::Ignore)

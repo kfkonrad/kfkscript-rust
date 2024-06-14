@@ -17,7 +17,7 @@ use color_eyre::eyre::{eyre, OptionExt, Result};
 fn register_keyword(
     global_state: GlobalState,
     name: &str,
-    implementation: fn(GlobalState, Vec<InvocationArgument>) -> GlobalState,
+    implementation: fn(GlobalState, Vec<InvocationArgument>) -> Result<GlobalState>,
     number_of_arguments: u32,
 ) -> Result<GlobalState> {
     let mut new_state = global_state;
@@ -103,7 +103,7 @@ fn next_invocation(
     let args: Vec<InvocationArgument>;
     (args, new_state) = retrieve_arguments(keyword_impl, keyword, tokens, new_state)?;
 
-    Ok((keyword_impl.implementation)(new_state, args))
+    (keyword_impl.implementation)(new_state, args)
 }
 
 fn retrieve_arguments(

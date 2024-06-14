@@ -1,3 +1,5 @@
+use color_eyre::Result;
+
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
@@ -31,7 +33,7 @@ impl PartialEq for InvocationArgument {
 #[derive(Clone)]
 pub struct KeywordImplementation {
     pub name: String,
-    pub implementation: fn(GlobalState, Vec<InvocationArgument>) -> GlobalState,
+    pub implementation: fn(GlobalState, Vec<InvocationArgument>) -> Result<GlobalState>,
     pub number_of_arguments: u32,
 }
 
