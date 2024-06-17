@@ -6,13 +6,10 @@ use crate::{
 use color_eyre::eyre::{OptionExt, Result};
 
 pub fn if_(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<GlobalState> {
-    let arg = args
-        .iter()
-        .next()
-        .ok_or_eyre(format!(
-            "Expected argument to keyword if in line {}",
-            global_state.line_number
-        ))?;
+    let arg = args.iter().next().ok_or_eyre(format!(
+        "Expected argument to keyword if in line {}",
+        global_state.line_number
+    ))?;
     let mut new_state = global_state;
     if match arg {
         InvocationArgument::Number(n) => n != &0.0,
@@ -27,8 +24,11 @@ pub fn if_(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<G
 
 pub fn else_(global_state: GlobalState, _: Vec<InvocationArgument>) -> Result<GlobalState> {
     let mut new_state = global_state;
-    let previous_nesting = new_state.nesting.last().ok_or_eyre(format!("Cannot use else when there is no previous if in line {}", new_state.line_number))?;
-    if  previous_nesting== &NestingState::If {
+    let previous_nesting = new_state.nesting.last().ok_or_eyre(format!(
+        "Cannot use else when there is no previous if in line {}",
+        new_state.line_number
+    ))?;
+    if previous_nesting == &NestingState::If {
         new_state.nesting.pop();
         new_state.nesting.push(NestingState::Else);
     } else if previous_nesting == &NestingState::Else {

@@ -38,8 +38,8 @@ pub fn add(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<G
 }
 
 pub fn let_(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<GlobalState> {
-    let name = args.get(0).ok_or_eyre("Name of variable in let not found. This error should never surface, please inform the developers of Kfkscript.")?;
-    let value = args.get(1).ok_or_eyre("Value of variable in let not found. This error should never surface, please inform the developers of Kfkscript.")?;
+    let name = args.get(0).ok_or_eyre(format!("Name of variable in let not found in line {}. This error should never surface, please inform the developers of Kfkscript.", global_state.line_number))?;
+    let value = args.get(1).ok_or_eyre(format!("Value of variable in let not found in line {}. This error should never surface, please inform the developers of Kfkscript.", global_state.line_number))?;
     let mut new_state = global_state;
     new_state
         .variables
@@ -49,7 +49,7 @@ pub fn let_(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<
 
 pub fn tel(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<GlobalState> {
     let mut new_state = global_state;
-    let name = args.get(0).ok_or_eyre("Name of variable in let not found. This error should never surface, please inform the developers.")?;
+    let name = args.get(0).ok_or_eyre(format!("Name of variable in let in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?;
     let value = new_state
         .variables
         .get(name)
@@ -59,5 +59,29 @@ pub fn tel(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<G
         .variables
         .insert(name.to_owned(), value.to_owned());
     new_state.ret = Some(value_clone);
+    Ok(new_state)
+}
+
+pub fn eq(global_state: GlobalState, args: Vec<InvocationArgument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let l0 = args.get(0).ok_or_eyre(format!("First argument of == not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?;
+    let l1 = args.get(1).ok_or_eyre(format!("Second argument of == not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?;
+    new_state.ret = Some(InvocationArgument::Number(match (l0, l1) {
+        (InvocationArgument::KfkString(s0), InvocationArgument::KfkString(s1)) => if s0 == s1 {1.0} else {0.0},
+        (InvocationArgument::Number(n0), InvocationArgument::Number(n1)) => if n0 == n1 {1.0} else {0.0},
+        (_, _) => 0.0,
+    }));
+    Ok(new_state)
+}
+
+pub fn true_(global_state: GlobalState, _args: Vec<InvocationArgument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    new_state.ret = Some(InvocationArgument::Number(1.0));
+    Ok(new_state)
+}
+
+pub fn false_(global_state: GlobalState, _args: Vec<InvocationArgument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    new_state.ret = Some(InvocationArgument::Number(0.0));
     Ok(new_state)
 }
