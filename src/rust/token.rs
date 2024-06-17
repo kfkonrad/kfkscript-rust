@@ -1,4 +1,5 @@
-#[derive(PartialEq)]
+#[allow(clippy::module_name_repetitions)]
+#[derive(PartialEq, Eq)]
 pub enum TokenType {
     Keyword,
     KfkApostropheString,
@@ -19,6 +20,7 @@ pub struct KfkString {
     pub line_number: u32,
 }
 
+#[allow(clippy::struct_field_names)]
 #[derive(Debug, Clone)]
 pub struct Number {
     pub lexem: String,

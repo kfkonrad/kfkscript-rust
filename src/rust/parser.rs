@@ -5,17 +5,16 @@ use color_eyre::eyre::{eyre, Result};
 
 fn determine_next_token_type(current_char: char, next_char: Option<&char>) -> (TokenType, String) {
     match current_char {
-        '-' => {
-            if let Some(next_char) = next_char {
+        '-' => next_char.map_or_else(
+            || (TokenType::Keyword, '-'.into()),
+            |next_char| {
                 if next_char.is_ascii_digit() {
                     (TokenType::Number, current_char.into())
                 } else {
                     (TokenType::Keyword, current_char.into())
                 }
-            } else {
-                (TokenType::Keyword, '-'.into())
-            }
-        }
+            },
+        ),
         '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
             (TokenType::Number, current_char.into())
         }
@@ -26,7 +25,7 @@ fn determine_next_token_type(current_char: char, next_char: Option<&char>) -> (T
     }
 }
 
-pub fn parse(source_code: String) -> Result<Vec<Token>> {
+pub fn parse(source_code: &str) -> Result<Vec<Token>> {
     let mut tokens: Vec<Token> = vec![];
     let mut line_number = 1;
     let mut prelim = String::new();
@@ -47,9 +46,8 @@ pub fn parse(source_code: String) -> Result<Vec<Token>> {
                     is_comment = false;
                     line_number += 1;
                     continue;
-                } else {
-                    continue;
                 }
+                continue;
             }
 
             (token_type, prelim) = determine_next_token_type(current_char, next_char);
@@ -70,7 +68,7 @@ pub fn parse(source_code: String) -> Result<Vec<Token>> {
                     prelim = String::new();
                     token_type = TokenType::None;
                 } else {
-                    prelim = format!("{}{}", prelim, current_char);
+                    prelim = format!("{prelim}{current_char}");
                 }
             }
             TokenType::KfkDollarString => {
@@ -82,7 +80,7 @@ pub fn parse(source_code: String) -> Result<Vec<Token>> {
                     prelim = String::new();
                     token_type = TokenType::None;
                 } else {
-                    prelim = format!("{}{}", prelim, current_char);
+                    prelim = format!("{prelim}{current_char}");
                 }
             }
             TokenType::Keyword => {
@@ -90,21 +88,19 @@ pub fn parse(source_code: String) -> Result<Vec<Token>> {
                     is_comment = current_char == '#';
                     tokens.push(Token::Keyword(token::Keyword {
                         lexem: prelim,
-                        line_number: line_number,
+                        line_number,
                     }));
                     prelim = String::new();
                     token_type = TokenType::None;
                 } else {
-                    prelim = format!("{}{}", prelim, current_char);
+                    prelim = format!("{prelim}{current_char}");
                 }
             }
             TokenType::Number => {
                 if current_char.is_whitespace() || current_char == '#' {
                     is_comment = current_char == '#';
-                    let number = prelim.parse().or_else(|_| {
-                        Err(eyre!(format!(
-                            "invalid number in line {line_number}: {prelim}"
-                        )))
+                    let number = prelim.parse().map_err(|_| {
+                        eyre!(format!("invalid number in line {line_number}: {prelim}"))
                     })?;
                     tokens.push(Token::Number(token::Number {
                         lexem: prelim,
@@ -114,7 +110,7 @@ pub fn parse(source_code: String) -> Result<Vec<Token>> {
                     prelim = String::new();
                     token_type = TokenType::None;
                 } else {
-                    prelim = format!("{}{}", prelim, current_char);
+                    prelim = format!("{prelim}{current_char}");
                 }
             }
             TokenType::None => {}
@@ -137,7 +133,7 @@ pub fn print_tokens(tokens: Vec<Token>) {
                     }
                     current_line = token.line_number;
                 }
-                print!("{} ", token.lexem)
+                print!("{} ", token.lexem);
             }
             Token::KfkString(token) => {
                 if token.line_number > current_line {
@@ -146,7 +142,7 @@ pub fn print_tokens(tokens: Vec<Token>) {
                     }
                     current_line = token.line_number;
                 }
-                print!("'{}\" ", token.lexem)
+                print!("'{}\" ", token.lexem);
             }
             Token::Number(token) => {
                 if token.line_number > current_line {
@@ -155,7 +151,7 @@ pub fn print_tokens(tokens: Vec<Token>) {
                     }
                     current_line = token.line_number;
                 }
-                print!("{} ", token.lexem)
+                print!("{} ", token.lexem);
             }
         }
     }

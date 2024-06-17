@@ -1,14 +1,14 @@
 use std::{collections::HashMap, fs};
 
 mod control_flow;
-mod invocation;
+mod expression;
+mod interpreter;
 mod keywords;
 mod parser;
 mod token;
-mod interpreter;
 
 use clap::Parser;
-use invocation::{GlobalState, InvocationArgument, KeywordImplementation};
+use expression::{Argument, GlobalState, KeywordImplementation};
 use parser::{parse, print_tokens};
 
 use color_eyre::eyre::{eyre, Result};
@@ -16,11 +16,11 @@ use color_eyre::eyre::{eyre, Result};
 fn register_keyword(
     global_state: GlobalState,
     name: &str,
-    implementation: fn(GlobalState, Vec<InvocationArgument>) -> Result<GlobalState>,
+    implementation: fn(GlobalState, Vec<Argument>) -> Result<GlobalState>,
     number_of_arguments: u32,
 ) -> Result<GlobalState> {
     let mut new_state = global_state;
-    if new_state.keywords.contains_key(name.into()) {
+    if new_state.keywords.contains_key(name) {
         Err(eyre!(format!(
             "Keyword {} already registered. Overwriting keyword registrations is not allowed.",
             name
@@ -48,11 +48,11 @@ fn main() -> Result<()> {
     color_eyre::install()?;
     let args = Cli::parse();
     let code: String = fs::read_to_string(args.filename)?;
-    let tokens = parse(code)?;
+    let tokens = parse(&code)?;
     let mut global_state: GlobalState = GlobalState {
         variables: HashMap::new(),
         keywords: HashMap::new(),
-        ret: Some(InvocationArgument::Number(0.0)),
+        ret: Some(Argument::Number(0.0)),
         nesting: vec![],
         line_number: 0,
     };
@@ -83,7 +83,7 @@ fn main() -> Result<()> {
             }
         }
 
-        global_state = interpreter::next_invocation(&mut token_iter, global_state)?;
+        global_state = interpreter::run_next_expression(&mut token_iter, &global_state)?;
     }
     Ok(())
 }
