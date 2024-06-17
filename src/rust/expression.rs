@@ -24,7 +24,7 @@ impl PartialEq for Argument {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::KfkString(l0), Self::KfkString(r0)) => l0 == r0,
-            (Self::Number(l0), Self::Number(r0)) => l0.to_string() == r0.to_string(),
+            (Self::Number(l0), Self::Number(r0)) => (l0 - r0).abs() > f64::EPSILON,
             _ => false,
         }
     }

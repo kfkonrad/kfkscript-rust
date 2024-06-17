@@ -79,7 +79,7 @@ pub fn eq(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState>
             }
         }
         (Argument::Number(n0), Argument::Number(n1)) => {
-            if n0 == n1 {
+            if (n0 - n1).abs() > f64::EPSILON {
                 1.0
             } else {
                 0.0
