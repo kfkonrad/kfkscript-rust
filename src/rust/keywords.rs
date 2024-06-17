@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use color_eyre::eyre::{eyre, OptionExt};
 use color_eyre::Result;
 
-use crate::expression::{self, Argument, GlobalState};
+use crate::expression::{self, Argument, GlobalState, Scope};
 
 pub use crate::control_flow::{else_, end, if_};
 
@@ -53,10 +55,10 @@ pub fn let_(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalStat
 pub fn tel(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
     let mut new_state = global_state;
     let name = args.first().ok_or_eyre(format!("Name of variable in let in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?;
-    let value = new_state
-        .variables
-        .get(name)
-        .ok_or_eyre(format!("No such variable {name:?}"))?;
+    let value = new_state.variables.get(name).ok_or_eyre(format!(
+        "No such variable {name} found in line {}",
+        new_state.line_number
+    ))?;
     let value_clone = value.clone();
     new_state
         .variables
@@ -101,5 +103,79 @@ pub fn true_(global_state: GlobalState, _args: Vec<Argument>) -> Result<GlobalSt
 pub fn false_(global_state: GlobalState, _args: Vec<Argument>) -> Result<GlobalState> {
     let mut new_state = global_state;
     new_state.ret = Some(Argument::Number(0.0));
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
+pub fn scope_push(global_state: GlobalState, _args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    new_state.scopes.push(Scope {
+        variables: new_state.variables,
+        ret: new_state.ret.clone(),
+        line_number: new_state.line_number,
+    });
+    new_state.variables = HashMap::new();
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn scope_pop(global_state: GlobalState, _args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let old_scope = new_state.scopes.pop().ok_or_eyre(format!(
+        "No scope found in line {}, cannot execute scope::pop",
+        new_state.line_number
+    ))?;
+    new_state.variables = old_scope.variables;
+    new_state.ret = old_scope.ret;
+    new_state.line_number = old_scope.line_number;
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn scope_outer_tel(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let search_name = args.first().ok_or_eyre(
+        format!("First argument of scope::outer::tel not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number)
+    )?;
+    new_state.scopes.reverse();
+    let mut found = false;
+    for scope in &new_state.scopes {
+        if let Some(result) = scope.variables.get(search_name) {
+            new_state.ret = Some(result.to_owned());
+            found = true;
+            break;
+        }
+    }
+    if !found {
+        Err(eyre!(format!(
+            "Variable {search_name} not found in line {}",
+            new_state.line_number
+        )))?;
+    }
+    new_state.scopes.reverse();
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn scope_outer_let(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let name = args.first().ok_or_eyre(format!("Name of variable in scope::outer::let not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?.to_owned();
+    let value = args.get(1).ok_or_eyre(format!("Value of variable in scope::outer::let not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?.to_owned();
+    if let Some(mut scope) = new_state.scopes.pop() {
+        scope.variables.insert(name, value);
+        new_state.scopes.push(scope);
+    } else {
+        new_state.variables.insert(name, value);
+    }
+
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn return_(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    new_state.ret = Some(args.first().ok_or_eyre(
+        format!("First argument of return not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number)
+    )?.clone());
     Ok(new_state)
 }

@@ -55,6 +55,7 @@ fn main() -> Result<()> {
         ret: Some(Argument::Number(0.0)),
         nesting: vec![],
         line_number: 0,
+        scopes: vec![],
     };
     global_state = register_keyword(global_state, "println", keywords::println, 1)?;
     global_state = register_keyword(global_state, "+", keywords::add, 2)?;
@@ -66,6 +67,21 @@ fn main() -> Result<()> {
     global_state = register_keyword(global_state, "==", keywords::eq, 2)?;
     global_state = register_keyword(global_state, "true", keywords::true_, 0)?;
     global_state = register_keyword(global_state, "false", keywords::false_, 0)?;
+    global_state = register_keyword(global_state, "scope::push", keywords::scope_push, 0)?;
+    global_state = register_keyword(global_state, "scope::pop", keywords::scope_pop, 0)?;
+    global_state = register_keyword(
+        global_state,
+        "scope::outer::let",
+        keywords::scope_outer_let,
+        2,
+    )?;
+    global_state = register_keyword(
+        global_state,
+        "scope::outer::tel",
+        keywords::scope_outer_tel,
+        1,
+    )?;
+    global_state = register_keyword(global_state, "return", keywords::return_, 1)?;
 
     if let Ok(debug) = std::env::var("KFKSCRIPT_DEBUG") {
         if debug == "1" {

@@ -20,6 +20,15 @@ impl std::hash::Hash for Argument {
 
 impl Eq for Argument {}
 
+impl std::fmt::Display for Argument {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::KfkString(s) => write!(f, "'{s}\""),
+            Self::Number(n) => write!(f, "{n}"),
+        }
+    }
+}
+
 impl PartialEq for Argument {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -57,6 +66,13 @@ pub struct GlobalState {
     // pub subroutine_content: Vec<InvocationArgument>,
     // pub is_keyword_definiton: bool,
     pub ret: Option<Argument>,
-    // pub scopes: Vec<GlobalState>,
+    pub scopes: Vec<Scope>,
     // pub variadic_number: u32,
+}
+
+#[derive(Clone)]
+pub struct Scope {
+    pub variables: HashMap<Argument, Argument>,
+    pub ret: Option<Argument>,
+    pub line_number: u32,
 }
