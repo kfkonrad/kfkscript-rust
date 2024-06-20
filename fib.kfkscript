@@ -1,0 +1,18 @@
+subroutine $fib
+  scope::push
+    let $n scope::outer::tel $n
+    if < tel $n 3
+      let $ret 1
+    end
+    if ! < tel $n 3
+      let $n - tel $n 1
+      let $a run $fib
+      let $n - tel $n 1
+      let $b run $fib
+      let $ret + tel $a tel $b
+    end
+  return tel $ret
+  scope::pop
+end
+let $n 20
+println run $fib

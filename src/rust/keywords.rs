@@ -6,6 +6,8 @@ use color_eyre::Result;
 use crate::expression::{self, Argument, GlobalState, Scope};
 
 pub use crate::control_flow::{else_, end, if_};
+use crate::interpreter;
+use crate::parser::print_tokens;
 
 #[allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
 pub fn println(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
@@ -35,6 +37,21 @@ pub fn add(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState
         .into_iter()
         .reduce(|a, b| a + b)
         .ok_or_eyre(format!("No enough arguments suplied to keyword + in line {}. This error should never surface, please inform the developers of Kfkscript.", global_state.line_number))?;
+    let mut new_state = global_state;
+    new_state.ret = Some(expression::Argument::Number(sum));
+    Ok(new_state)
+}
+
+pub fn subtract(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    let sum = args
+        .into_iter()
+        .map(|current_arg| match current_arg {
+            expression::Argument::Number(number) => Ok(number),
+            expression::Argument::KfkString(_) => Err(eyre!(format!("cannot use argument of type String with keyword - in line {}", global_state.line_number))),
+        }).collect::<Result<Vec<f64>>>()?
+        .into_iter()
+        .reduce(|a, b| a - b)
+        .ok_or_eyre(format!("No enough arguments suplied to keyword - in line {}. This error should never surface, please inform the developers of Kfkscript.", global_state.line_number))?;
     let mut new_state = global_state;
     new_state.ret = Some(expression::Argument::Number(sum));
     Ok(new_state)
@@ -81,13 +98,62 @@ pub fn eq(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState>
             }
         }
         (Argument::Number(n0), Argument::Number(n1)) => {
-            if (n0 - n1).abs() > f64::EPSILON {
+            if (n0 - n1).abs() > 10e-9 {
                 1.0
             } else {
                 0.0
             }
         }
         (_, _) => 0.0,
+    }));
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn less_than(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let l0 = args.first().ok_or_eyre(format!("First argument of < not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?;
+    let l1 = args.get(1).ok_or_eyre(format!("Second argument of < not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?;
+    new_state.ret = Some(Argument::Number(match (l0, l1) {
+        (Argument::KfkString(s0), Argument::KfkString(s1)) => {
+            if s0 < s1 {
+                1.0
+            } else {
+                0.0
+            }
+        }
+        (Argument::Number(n0), Argument::Number(n1)) => {
+            // println!("LESS THAN {}, {}: {}", n0, n1, n0 < n1);
+            if n0 < n1 {
+                1.0
+            } else {
+                0.0
+            }
+        }
+        (_, _) => 0.0,
+    }));
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn not(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let l0 = args.first().ok_or_eyre(format!("Argument of ! not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?;
+    new_state.ret = Some(Argument::Number(match l0 {
+        Argument::KfkString(s) => {
+            if s.is_empty() {
+                1.0
+            } else {
+                0.0
+            }
+        },
+        Argument::Number(n) => {
+            if n.abs() < 10e-9 {
+                1.0
+            } else {
+                0.0
+            }
+        }
     }));
     Ok(new_state)
 }
@@ -125,8 +191,10 @@ pub fn scope_pop(global_state: GlobalState, _args: Vec<Argument>) -> Result<Glob
         "No scope found in line {}, cannot execute scope::pop",
         new_state.line_number
     ))?;
+    // println!("POP_BEFORE {:?}", new_state.ret);
     new_state.variables = old_scope.variables;
-    new_state.ret = old_scope.ret;
+    //new_state.ret = old_scope.ret;
+    // println!("POP_AFTER  {:?}", new_state.ret);
     new_state.line_number = old_scope.line_number;
     Ok(new_state)
 }
@@ -177,5 +245,34 @@ pub fn return_(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalS
     new_state.ret = Some(args.first().ok_or_eyre(
         format!("First argument of return not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number)
     )?.clone());
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn subroutine(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    if global_state.nesting.contains(&expression::NestingState::SubroutineDefinition) {
+        Err(eyre!(format!("Nested subroutine definition not allowed in line {}", global_state.line_number)))?;
+    }
+    let mut new_state = global_state;
+    let name = args.first().ok_or_eyre(format!("Name of subroutine not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?.to_owned();
+    new_state.nesting.push(expression::NestingState::SubroutineDefinition);
+    new_state.subroutine_name = Some(name);
+    Ok(new_state)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn run(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let name = args.first().ok_or_eyre(format!("Name of subroutine to run not found in line {}. This error should never surface, please inform the developers of Kfkscript.", new_state.line_number))?.to_owned();
+    let subroutine_tokens = new_state.subroutines.get(&name).ok_or_eyre(format!("Subroutine {name} not found in line {}", new_state.line_number)).cloned()?;
+    if let Ok(debug) = std::env::var("KFKSCRIPT_SUBROUTINE_DEBUG") {
+        if debug == "1" {
+            println!("{name}");
+            println!("{:?}", new_state.variables);
+            print_tokens(subroutine_tokens.clone());
+        }
+    }
+    let subroutine_iter = subroutine_tokens.iter().peekable();
+    new_state = interpreter::main_loop(subroutine_iter, new_state)?;
     Ok(new_state)
 }

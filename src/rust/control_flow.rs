@@ -1,3 +1,5 @@
+use std::{iter::Peekable, slice::Iter};
+
 use crate::{
     expression::{self, Argument, GlobalState, NestingState},
     token::{self, Token},
@@ -13,7 +15,7 @@ pub fn if_(global_state: GlobalState, args: Vec<Argument>) -> Result<GlobalState
     ))?;
     let mut new_state = global_state;
     if match arg {
-        Argument::Number(n) => (n - 0.0).abs() > f64::EPSILON,
+        Argument::Number(n) => (n - 1.0).abs() < 10e-9,
         Argument::KfkString(s) => !s.is_empty(),
     } {
         new_state.nesting.push(expression::NestingState::If);
@@ -41,6 +43,7 @@ pub fn else_(global_state: GlobalState, _: Vec<Argument>) -> Result<GlobalState>
 
 pub fn end(global_state: GlobalState, _: Vec<Argument>) -> Result<GlobalState> {
     let mut new_state = global_state;
+    // println!("END, returning {:?}", new_state.ret);
     let previous_state = new_state.nesting.pop().ok_or_eyre(format!("Cannot use end when there is no previous if, subroutine or keyword registration in line {}", new_state.line_number))?;
     if previous_state == NestingState::SubroutineDefinition {
         todo!();
@@ -56,25 +59,51 @@ pub fn end(global_state: GlobalState, _: Vec<Argument>) -> Result<GlobalState> {
 // meaning the else keyword becomes a no-op. We still need the NestingState::Ignore in our nesting stack
 // because we need to balance our ifs and ends. The end keyword will treat a NestingState::If and
 // NestingState::Ignore the same: pop them
-pub fn determine_tokens_to_skip(
+pub fn hurenmüll(
+    tokens: &mut Peekable<Iter<Token>>,
     global_state: GlobalState,
-    next_token: &Token,
 ) -> Result<(u32, GlobalState)> {
-    if let Some(current_nesting) = global_state.nesting.last() {
-        if current_nesting == &NestingState::Else || current_nesting == &NestingState::Ignore {
-            if let Token::Keyword(token::Keyword { lexem, line_number }) = next_token {
-                if lexem != &"end".to_string() && lexem != &"else".to_string() {
-                    let mut new_state = global_state;
-                    if lexem == &"if".to_string() {
-                        new_state.nesting.push(NestingState::Ignore);
-                    }
-                    let keyword_impl = new_state.keywords.get(lexem).ok_or_eyre(format!(
-                        "keyword {lexem} not implemented in line {line_number}"
-                    ))?;
-                    return Ok((keyword_impl.number_of_arguments, new_state));
-                }
-            }
+    let mut next_token = tokens.next().unwrap();
+    while match next_token {
+        Token::Keyword(k) => k.lexem != "end",
+        Token::KfkString(_) => true,
+        Token::Number(_) => true,
+    } {
+        next_token = tokens.peek().unwrap();
+        if match next_token {
+            Token::Keyword(k) => k.lexem != "end",
+            Token::KfkString(_) => true,
+            Token::Number(_) => true,
+        } {
+            tokens.next();
         }
     }
     Ok((0, global_state))
+}
+
+pub fn skip_tokens(
+    token_iter: &mut Peekable<Iter<Token>>,
+    global_state: GlobalState,
+) -> Result<GlobalState> {
+    let mut new_state = global_state;
+    let mut nesting_counter = 1;
+    while nesting_counter > 0
+    {
+        let next_token = token_iter
+            .next()
+            .ok_or_eyre(format!(
+                "no end found to terminate subroutine definition in line {}",
+                new_state.line_number
+            ))?;
+        if let Token::Keyword(keyword) = next_token {
+            if keyword.lexem == "if" {
+                new_state.nesting.push(NestingState::Ignore);
+                nesting_counter += 1;
+            } else if keyword.lexem == "end" {
+                new_state.nesting.pop();
+                nesting_counter -= 1;
+            }
+        }
+    }
+    Ok(new_state)
 }

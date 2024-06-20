@@ -56,15 +56,20 @@ fn main() -> Result<()> {
         nesting: vec![],
         line_number: 0,
         scopes: vec![],
+        subroutines: HashMap::new(),
+        subroutine_name: None,
     };
     global_state = register_keyword(global_state, "println", keywords::println, 1)?;
     global_state = register_keyword(global_state, "+", keywords::add, 2)?;
+    global_state = register_keyword(global_state, "-", keywords::subtract, 2)?;
     global_state = register_keyword(global_state, "if", keywords::if_, 1)?;
     global_state = register_keyword(global_state, "else", keywords::else_, 0)?;
     global_state = register_keyword(global_state, "end", keywords::end, 0)?;
     global_state = register_keyword(global_state, "let", keywords::let_, 2)?;
     global_state = register_keyword(global_state, "tel", keywords::tel, 1)?;
     global_state = register_keyword(global_state, "==", keywords::eq, 2)?;
+    global_state = register_keyword(global_state, "<", keywords::less_than, 2)?;
+    global_state = register_keyword(global_state, "!", keywords::not, 1)?;
     global_state = register_keyword(global_state, "true", keywords::true_, 0)?;
     global_state = register_keyword(global_state, "false", keywords::false_, 0)?;
     global_state = register_keyword(global_state, "scope::push", keywords::scope_push, 0)?;
@@ -82,24 +87,15 @@ fn main() -> Result<()> {
         1,
     )?;
     global_state = register_keyword(global_state, "return", keywords::return_, 1)?;
+    global_state = register_keyword(global_state, "subroutine", keywords::subroutine, 1)?;
+    global_state = register_keyword(global_state, "run", keywords::run, 1)?;
 
     if let Ok(debug) = std::env::var("KFKSCRIPT_DEBUG") {
         if debug == "1" {
             print_tokens(tokens.clone());
         }
     }
-    let mut token_iter = tokens.iter().peekable();
-    while let Some(next_token) = token_iter.peek() {
-        let tokens_to_skip: u32;
-        (tokens_to_skip, global_state) =
-            control_flow::determine_tokens_to_skip(global_state, next_token)?;
-        if tokens_to_skip > 0 {
-            for _ in 0..=tokens_to_skip {
-                token_iter.next();
-            }
-        }
-
-        global_state = interpreter::run_next_expression(&mut token_iter, &global_state)?;
-    }
+    let token_iter = tokens.iter().peekable();
+    interpreter::main_loop(token_iter, global_state)?;
     Ok(())
 }
